@@ -51,7 +51,7 @@ class IntCode:
             return self.memory[self.target(par, flags)]
 
     def store(self, par, flags, value):
-        selfmemory[self.target(par, flags)] = value        
+        self.memory[self.target(par, flags)] = value        
 
     def operation(self, ip):
         (op, fa, fb, fc) = self.parse_operation(self.memory[ip])
@@ -82,18 +82,18 @@ class IntCode:
             [a, b] = self.memory[ip+1:ip+3]
             return self.fetch(b, fb) if not self.fetch(a, fa) else ip + 3
         elif op == OpCode.LT:
-            [a, b, c] = memory[ip+1:ip+4]
+            [a, b, c] = self.memory[ip+1:ip+4]
             result = 1 if self.fetch(a, fa) < self.fetch(b, fb) else 0
             self.store(c, fc, result)
             return ip + 4
         elif op == OpCode.EQL:
-            [a, b, c] = memory[ip+1:ip+4]
+            [a, b, c] = self.memory[ip+1:ip+4]
             result = 1 if self.fetch(a, fa) == self.fetch(b, fb) else 0
             self.store(c, fc, result)
             return ip + 4
         elif op == OpCode.RPA:
-            a = memory[ip+1]
-            self.rp += self.fetch(memory, a, fa)
+            a = self.memory[ip+1]
+            self.rp += self.fetch(a, fa)
             return ip + 2
         elif op == OpCode.END:
             return None
@@ -106,7 +106,7 @@ class IntCode:
     
     def run(self):
         self.finished = False
-        memory = self.program.copy() + [0] * 2**16
+        self.memory = self.program.copy() + [0] * 2**16
         self.ip = 0
         self.rp = 0
         while self.ip is not None:

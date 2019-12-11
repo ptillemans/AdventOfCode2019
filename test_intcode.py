@@ -2,7 +2,7 @@
 import pytest
 import queue
 
-from intcode import *
+from intcode import IntCode
 
 def parse(source):
     return [int(s.strip()) for s in source.split(',')]
