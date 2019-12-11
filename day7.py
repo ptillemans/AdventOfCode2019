@@ -1,24 +1,28 @@
 from intcode import IntCode
 import pytest
 import threading
+import queue
 
 
 def create_amps(source, configuration):
-    amps = [IntCode(source) for range(5)]
+    amps = [IntCode(source) for _ in range(5)]
     for i in range(5):
-        amps[i].input.put(config[i])
-    for i in range(1,5):
-        amps[i-1].output = lambda x: amps[i].input.put(x)
+        amps[i].input.put(configuration[i])
+    amps[0].output = lambda x: amps[1].input.put(x)
+    amps[1].output = lambda x: amps[2].input.put(x)
+    amps[2].output = lambda x: amps[3].input.put(x)
+    amps[3].output = lambda x: amps[4].input.put(x)
+    amps[4].out_queue = queue.Queue()
+    amps[4].output = lambda x: amps[i].out_queue.put(x)
     return amps
 
 def thuster_output(source, configuration, signal):
     amps = create_amps(source, configuration)
     for amp in amps:
-        amp.thread = threading.Thread(amp.run)
+        amp.thread = threading.Thread(target=amp.run)
         amp.thread.start()
-    amp[0].input.put(0) 
-    signal.
-    return signal
+    amps[0].input.put(signal) 
+    return amps[4].out_queue.get()
     
     
 def all_configs():
