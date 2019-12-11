@@ -8,7 +8,7 @@ with open('day8_input.txt', 'r') as f:
     
 def split_layers(input, rows, cols):
     data = [int(c) for c in input]
-    layers = len(data) / (rows * cols)   
+    layers = len(data) // (rows * cols)   
     return np.array(data).reshape((layers, rows, cols))
     
 def count_elements_equal(arr, value):
