@@ -36,79 +36,60 @@ class IntCode:
         self.finished = False
         self.rp = 0
         
-    def fetch(self, memory, par, flags):
-        if OpFlags.POSITIONAL == flags:
-            return memory[par]
-        elif OpFlags.IMMEDIATE == flags:
+    def target(self, par, flags):
+        if flags == OpFlags.POSITIONAL:
             return par
-        elif OpFlags.RELATIVE == flags:
-            return memory[self.rp + par]
+        elif flags == OpFlags.RELATIVE:
+            return self.rp + par
         else:
             raise IntCodeError('Invalid opcode flags : {flags}')
-
-    def store(self, memory, par, flags, value):
-        if OpFlags.POSITIONAL == flags:
-            memory[par] = value
-        elif OpFlags.RELATIVE == flags:
-            memory[self.rp + par] = value
+            
+    def fetch(self, par, flags):
+        if OpFlags.IMMEDIATE == flags:
+            return par
         else:
-            raise IntCodeError('Invalid opcode flags : {flags}')
+            return self.memory[self.target(par, flags)]
 
-    def operation(self, memory, ip):
-        (op, fa, fb, fc) = self.parse_operation(memory[ip])
+    def store(self, par, flags, value):
+        selfmemory[self.target(par, flags)] = value        
+
+    def operation(self, ip):
+        (op, fa, fb, fc) = self.parse_operation(self.memory[ip])
         if op == OpCode.ADD:
-            [a, b, to] = memory[ip+1:ip+4]
-            v1 = self.fetch(memory, a, fa)
-            v2 = self.fetch(memory, b, fb)
-            result = v1 + v2
-            self.store(memory, to, fc, result)
+            [a, b, to] = self.memory[ip+1:ip+4]
+            result = self.fetch(a, fa) + self.fetch(b, fb)
+            self.store(to, fc, result)
             return ip + 4
         elif op == OpCode.MULT:
-            [a, b, to] = memory[ip+1:ip+4]
-            result = self.fetch(memory, a, fa) * self.fetch(memory, b, fb)
-            self.store(memory, to, fc, result)
+            [a, b, to] = self.memory[ip+1:ip+4]
+            result = self.fetch(a, fa) * self.fetch(b, fb)
+            self.store(to, fc, result)
             return ip + 4
         elif op == OpCode.IN:
-            to = memory[ip+1]
+            to = self.memory[ip+1]
             result = self.input.get()
-            #print(f'IN ({self.name}): {val}')
-            self.store(memory, to, fa, result)
+            self.store(to, fa, result)
             return ip + 2
         elif op == OpCode.OUT:
-            a = memory[ip+1]
-            out = self.fetch(memory, a, fa)
-            #print(f"OUT({self.name}): {out}")
+            a = self.memory[ip+1]
+            out = self.fetch(a, fa)
             self.output(out)
             return ip + 2
         elif op == OpCode.JMPIFT:
-            [a, to] = memory[ip+1:ip+3]
-            if self.fetch(memory, a, fa):
-                return self.fetch(memory, to, fb)
-            else:
-                return ip + 3
+            [a, to] = self.memory[ip+1:ip+3]
+            return self.fetch(to, fb) if self.fetch(a, fa) else ip + 3
         elif op == OpCode.JMPIFF:
-            [a, to] = memory[ip+1:ip+3]
-            if not self.fetch(memory, a, fa):
-                return self.fetch(memory, to, fb)
-            else:
-                return ip + 3
+            [a, b] = self.memory[ip+1:ip+3]
+            return self.fetch(b, fb) if not self.fetch(a, fa) else ip + 3
         elif op == OpCode.LT:
-            [a, b, to] = memory[ip+1:ip+4]
-            if fc == OpFlags.RELATIVE:
-                to = self.rp + to
-            if self.fetch(memory, a, fa) < self.fetch(memory, b, fb):
-                memory[to] = 1
-            else:
-                memory[to] = 0
+            [a, b, c] = memory[ip+1:ip+4]
+            result = 1 if self.fetch(a, fa) < self.fetch(b, fb) else 0
+            self.store(c, fc, result)
             return ip + 4
         elif op == OpCode.EQL:
-            [a, b, to] = memory[ip+1:ip+4]
-            if fc == OpFlags.RELATIVE:
-                to = self.rp + to
-            if self.fetch(memory, a, fa) == self.fetch(memory, b, fb):
-                memory[to] = 1
-            else:
-                memory[to] = 0
+            [a, b, c] = memory[ip+1:ip+4]
+            result = 1 if self.fetch(a, fa) == self.fetch(b, fb) else 0
+            self.store(c, fc, result)
             return ip + 4
         elif op == OpCode.RPA:
             a = memory[ip+1]
@@ -129,8 +110,7 @@ class IntCode:
         self.ip = 0
         self.rp = 0
         while self.ip is not None:
-            # print(f'{ip}: {memory[ip:ip+4]}')
-            self.ip = self.operation(memory, self.ip)
+            self.ip = self.operation(self.ip)
             
         self.finished = True
 

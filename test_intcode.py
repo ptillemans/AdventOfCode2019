@@ -1,4 +1,4 @@
-import unittest
+
 import pytest
 import queue
 
@@ -24,8 +24,22 @@ def test_day5():
     prg.input.put(9)
     prg.run()
     assert 1001 == out_queue.get()
+
            
-   
+def test_day5_full():
+    with open('day5_input.txt', 'r') as f:
+	    code = [int(t) for t in  f.read().split(',')]
+	
+
+    out_queue = queue.Queue()
+    prg = IntCode(code)
+    prg.output = lambda x: out_queue.put(x)
+    prg.input.put(5)
+    prg.run()
+    result = out_queue.get()
+    assert result == 15586959
+
+
 def test_day_9():
     code = parse('109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99')
     out_queue = queue.Queue()
@@ -36,6 +50,7 @@ def test_day_9():
     
     for c in code:
         assert c == out_queue.get()
+
 
 def test_day_9_2():
     code = parse('1102,34915192,34915192,7,4,7,99,0')
@@ -48,7 +63,8 @@ def test_day_9_2():
     out = out_queue.get()
 
     assert len(str(out)) == 16
-    
+
+
 def test_day_9_3():
     code = parse('104,1125899906842624,99')
     out_queue = queue.Queue()
@@ -60,6 +76,7 @@ def test_day_9_3():
     out = out_queue.get()
 
     assert out == 1125899906842624
+
 
 def test_day_9_boost():
     with open('day9_input.txt', 'r') as f:
