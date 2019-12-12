@@ -2,7 +2,8 @@ from intcode import IntCode
 from typing import Iterable, NamedTuple, MutableMapping
 from enum import Enum
 import threading
-
+import queue
+import matplotlib.pyplot as plt
 
 class Point(NamedTuple):
     x : int
@@ -70,7 +71,7 @@ class PaintRobot():
         self.panels = {}
 
     def do_step(self, color: Color, turn: Turn) -> Color:
-        panels[self.location] = color
+        self.panels[self.location] = color
         if turn == Turn.LEFT:
             self.direction = self.direction.turn_left()
         elif turn == Turn.RIGHT:
@@ -84,26 +85,52 @@ class PaintRobot():
 
 
     def loopback(self):
-        new_color = self.computer.output.get()
-        turn = self.computer.output.get()
-        color = self.do_step(color, turn)
-        self.computer.input.put(new_color)
+        print('Starting loopback')
+        while not self.computer.finished:
+            try:
+                new_color = Color(self.computer.output.get(True, 1))
+                turn = Turn(self.computer.output.get(True, 1))
+                color = self.do_step(new_color, turn)
+                #print(f'{new_color}, {turn} -> {self.location} - {color}')
+                self.computer.input.put(color.value)
+            except queue.Empty:
+                print(f'timeout.')
+        print('closing loopback thread.')
 
-    def run(self):
-         loop_thread = threading.Thread(target=self.loopback)
-         self.computer.input.put(Color.BLACK.value)
-         self.computer.run()
+    def run(self, start_color: Color):
+        loop_thread = threading.Thread(target=self.loopback)
+        loop_thread.start()
+        self.computer.input.put(start_color.value)
+        self.computer.run()
+
 
 def read_paint_code(src='day11_input.txt'):
     with open(src, 'r') as f:
-        return f.read().strip().split(',')
+        return [int(opcode) for opcode in f.read().strip().split(',')]
+
 
 def paint_program(code):
     robot = PaintRobot(code)
-    robot.run()
+    robot.run(Color.BLACK)
+    report_panels(robot)
+    robot = PaintRobot(code)
+    robot.run(Color.WHITE)
+    plot_panels(robot)
+
+
+def report_panels(robot: PaintRobot):
     painted_panels = robot.panels.keys()
     print(f"Panels: {painted_panels}")
     print(f"Total: {len(painted_panels)}")
+
+
+def plot_panels(robot: PaintRobot):
+    painted_panels = robot.panels.keys()
+    xs = [t[0] for t in painted_panels]
+    ys = [t[1] for t in painted_panels]
+    colors = [robot.panels[panel].value for panel in painted_panels]
+    plt.scatter(xs, ys, c=colors)
+    plt.show()
 
 
 if __name__ == '__main__':
