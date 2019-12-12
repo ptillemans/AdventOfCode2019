@@ -100,9 +100,11 @@ def read_paint_code(src='day11_input.txt'):
 
 def paint_program(code):
     robot = PaintRobot(code)
+    robot.run()
     painted_panels = robot.panels.keys()
     print(f"Panels: {painted_panels}")
     print(f"Total: {len(painted_panels)}")
 
 
-paint_program(read_paint_code())
+if __name__ == '__main__':
+    paint_program(read_paint_code())
