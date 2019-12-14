@@ -10,6 +10,8 @@ rope = "*"
 [packages]
 pytest = "*"
 pylint = "*"
+epc = "*"
+importmagic = "*"
 
 [requires]
 python_version = "3.8"
