@@ -10,6 +10,7 @@ rope = "*"
 [packages]
 pytest = "*"
 pylint = "*"
+numpy = "*"
 
 [requires]
 python_version = "3.8"
