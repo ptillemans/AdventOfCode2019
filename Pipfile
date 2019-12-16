@@ -12,6 +12,11 @@ pytest = "*"
 pylint = "*"
 epc = "*"
 importmagic = "*"
+numpy = "*"
+matplotlib = "*"
+pygame = "*"
+mypy = "*"
+ptvsd = "*"
 
 [requires]
 python_version = "3.8"
