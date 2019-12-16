@@ -13,7 +13,7 @@ class OpCode(Enum):
     EQL = 8
     RPA = 9
     END = 99
-    
+
 class OpFlags(IntEnum):
     POSITIONAL = 0
     IMMEDIATE = 1
@@ -23,19 +23,19 @@ class OpFlags(IntEnum):
 class IntCodeError(Exception):
     pass
 
-    
+
 class IntCode:
-    
+
     def __init__(self, program):
         self.name = 'IntCode'
         self.program = program.copy()
         self.memory = []
         self.input = queue.Queue()
-        self.output = lambda x: print(f'OUT: {x}')
+        self.output = queue.Queue()
         self.ip = 0
         self.finished = False
         self.rp = 0
-        
+
     def target(self, par, flags):
         if flags == OpFlags.POSITIONAL:
             return par
@@ -43,7 +43,7 @@ class IntCode:
             return self.rp + par
         else:
             raise IntCodeError('Invalid opcode flags : {flags}')
-            
+
     def fetch(self, par, flags):
         if OpFlags.IMMEDIATE == flags:
             return par
@@ -51,7 +51,7 @@ class IntCode:
             return self.memory[self.target(par, flags)]
 
     def store(self, par, flags, value):
-        selfmemory[self.target(par, flags)] = value        
+        self.memory[self.target(par, flags)] = value
 
     def operation(self, ip):
         (op, fa, fb, fc) = self.parse_operation(self.memory[ip])
@@ -73,7 +73,7 @@ class IntCode:
         elif op == OpCode.OUT:
             a = self.memory[ip+1]
             out = self.fetch(a, fa)
-            self.output(out)
+            self.output.put(out)
             return ip + 2
         elif op == OpCode.JMPIFT:
             [a, to] = self.memory[ip+1:ip+3]
@@ -82,41 +82,40 @@ class IntCode:
             [a, b] = self.memory[ip+1:ip+3]
             return self.fetch(b, fb) if not self.fetch(a, fa) else ip + 3
         elif op == OpCode.LT:
-            [a, b, c] = memory[ip+1:ip+4]
+            [a, b, c] = self.memory[ip+1:ip+4]
             result = 1 if self.fetch(a, fa) < self.fetch(b, fb) else 0
             self.store(c, fc, result)
             return ip + 4
         elif op == OpCode.EQL:
-            [a, b, c] = memory[ip+1:ip+4]
+            [a, b, c] = self.memory[ip+1:ip+4]
             result = 1 if self.fetch(a, fa) == self.fetch(b, fb) else 0
             self.store(c, fc, result)
             return ip + 4
         elif op == OpCode.RPA:
-            a = memory[ip+1]
-            self.rp += self.fetch(memory, a, fa)
+            a = self.memory[ip+1]
+            self.rp += self.fetch(a, fa)
             return ip + 2
         elif op == OpCode.END:
             return None
         else:
             raise IntCodeError(f'illegal opcode {op}')
-        
+
     def parse_operation(self, op: int):
         (op1, op2, fa, fb, fc) = digits(op)
         return (OpCode(10*op2 + op1), OpFlags(fa), OpFlags(fb), OpFlags(fc))
-    
+
     def run(self):
         self.finished = False
-        memory = self.program.copy() + [0] * 2**16
+        self.memory = self.program.copy() + [0] * 2**16
         self.ip = 0
         self.rp = 0
         while self.ip is not None:
             self.ip = self.operation(self.ip)
-            
+
         self.finished = True
 
-    
+
 def digits(n):
     for _ in range(5):
         yield n % 10
         n //= 10
-        
