@@ -113,6 +113,12 @@ class IntCode:
 
         self.finished = True
 
+    @classmethod
+    def create_from_source(cls, filename) -> IntCode:
+        with open(filename, 'r') as f:
+            code = [int(s.strip()) for s in f.read().split(',')]
+            return IntCode(code)
+
 
 def digits(n):
     for _ in range(5):
