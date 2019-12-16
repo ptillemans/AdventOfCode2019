@@ -1,6 +1,5 @@
 from enum import Enum, IntEnum
 import queue
-import numpy as np
 
 class OpCode(Enum):
     ADD = 1

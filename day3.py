@@ -67,7 +67,7 @@ def crossing(seg1, seg2):
 		  
 	
 		
-examples = read_wires('examples_day3.txt')
+examples = read_wires('day3_examples.txt')
 
 print(examples)
 
@@ -95,7 +95,7 @@ ex2_xs = find_crossings(examples[2], examples[3])
 print(min_distance(ex1_xs))
 print(min_distance(ex2_xs))
 
-[w1, w2] = read_wires('input_day3.txt')
+[w1, w2] = read_wires('day3_input.txt')
 w1_w2_xs = find_crossings(w1, w2)
 print(min_distance(w1_w2_xs))
 

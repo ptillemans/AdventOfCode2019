@@ -1,7 +1,6 @@
 from intcode import IntCode
 import threading
 import queue
-import numpy as np
 import matplotlib.pyplot as plt
 import pygame
 import enum
@@ -112,11 +111,12 @@ class Arcade():
             try:
                 if not self.computer.output.empty():
                     self.update_game()
+                    self.draw_screen()
+                    pygame.display.flip()
             except queue.Empty:
                 print('output queue empty')
                 done = True
-            self.draw_screen()
-            pygame.display.flip()
+            
             if self.computer.finished and self.computer.output.empty():
                 done = True
         print('game loop stopped')
@@ -142,13 +142,13 @@ class Arcade():
 if __name__ == '__main__':
     arcade = Arcade(day13_input)
 
-    if False:
-        arcade.start_game()
-        blocks = [arcade.board[l] 
-            for l in arcade.board.keys() 
-            if arcade.board[l] == Tile.BLOCK]
-        print(len(blocks))
-    else:
-        arcade = Arcade(day13_input)
-        arcade.start_game(quarters = 2)
-        print(arcade.score)
+    arcade.start_game()
+    blocks = [arcade.board[l] 
+        for l in arcade.board.keys() 
+        if arcade.board[l] == Tile.BLOCK]
+    print(f"Part1: number of blocks is {len(blocks)}")
+        
+        
+    arcade = Arcade(day13_input)
+    arcade.start_game(quarters = 2)
+    print(f"Part2: max score is {arcade.score}")
