@@ -1,6 +1,8 @@
 from enum import Enum, IntEnum
 import queue
 
+TIMEOUT = 2
+
 class OpCode(Enum):
     ADD = 1
     MULT = 2
@@ -66,7 +68,15 @@ class IntCode:
             return ip + 4
         elif op == OpCode.IN:
             to = self.memory[ip+1]
-            result = self.input.get()
+            result = None
+            while not self.finished:
+                try:
+                    result = self.input.get(True, TIMEOUT)
+                    break
+                except queue.Empty:
+                    pass
+                    if self.finished:
+                        return None
             self.store(to, fa, result)
             return ip + 2
         elif op == OpCode.OUT:
