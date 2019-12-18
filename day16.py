@@ -21,6 +21,14 @@ def output_signal(signal, repeat = 1):
     return code
 
 def final_message(signal):
+    '''simplified calculation for large offsets
+    
+    a hack which only works if the offset points to the
+    last quarter of the message, which is convenientlye the 
+    case.
+    
+    The brute force method above was just too slow.
+    '''
     offset = int(signal[:7])
     input = signal*10000
     fft = reversed(tuple(int(c) for c in input[offset:]))
