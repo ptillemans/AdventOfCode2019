@@ -169,7 +169,7 @@ def test_example3():
     assert steps == 132
 
 @pytest.mark.skip
-def test_example3():
+def test_example4():
     maze_text = '''#################
 #i.G..c...e..H.p#
 ########.########
@@ -185,28 +185,13 @@ def test_example3():
 
 def play_area():
     day18_maze = parse_vault_map(day18_input)
-    day18_maze.print_maze()
     #day18_maze.remove_dead_ends()
     #day18_maze.print_maze()
 
     (keys, doors) = find_reachable_things(day18_maze, (40, 40))
 
-    print(f'keys: {keys}')
-    print(list(map(day18_maze.get_tile, (k[0] for k in keys))))
-    print(f'doors: {doors}')
-    print(list(map(day18_maze.get_tile, (d[0] for d in doors))))
-
-    matching_pairs = [(key, door)
-        for key in keys
-        for door in doors
-        if day18_maze.get_tile(key[0]).upper() == day18_maze.get_tile(door[0])]
-
-    print(matching_pairs)
-
-    G = maze_to_graph(day18_maze, (40, 40))
-
     plt.subplot(1,1,1)
-    nx.draw(G, with_labels=True)
+    nx.draw(day18_maze, with_labels=True)
     plt.show()
 
 if __name__ == '__main__':

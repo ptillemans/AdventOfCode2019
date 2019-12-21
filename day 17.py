@@ -189,6 +189,6 @@ R,12,L,6,R,6,R,8,R,6
 L,8,R,8,R,6,R,12
 '''
     vacuum_droid = AftScaffoldingControl(mode=2)
-    dust = vacuum_droid.walk_scaffold(main)
+    vacuum_droid.walk_scaffold(main)
 
 

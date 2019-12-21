@@ -114,7 +114,7 @@ class IntCode:
         return (OpCode(10*op2 + op1), OpFlags(fa), OpFlags(fb), OpFlags(fc))
 
     def run(self):
-        print('intcode run')
+        #print('intcode run')
         self.finished = False
         self.memory = self.program.copy() + [0] * 2**16
         self.ip = 0
@@ -123,7 +123,7 @@ class IntCode:
             self.ip = self.operation(self.ip)
 
         self.finished = True
-        print('intcode done')
+        #print('intcode done')
 
     @classmethod
     def create_from_source(cls, filename) -> 'IntCode':
