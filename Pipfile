@@ -17,6 +17,8 @@ matplotlib = "*"
 pygame = "*"
 mypy = "*"
 ptvsd = "*"
+pyrsistent = "*"
+networkx = "*"
 
 [requires]
 python_version = "3.8"
