@@ -31,7 +31,7 @@ def find_reachable_things(maze, start, tiles_filled=None):
             for tile in next_tiles
             for loc in maze.neighbors(tile)
             if loc not in tiles_filled}
-        keys |= {(l, distance) for l in next_tiles if maze.get_tile(l) in string.ascii_lowercase}
+        keys |= {(l, distance) for l in next_tiles if maze.get_tile(l) not in string.ascii_uppercase}
         doors |= {(l, distance) for l in next_tiles if maze.get_tile(l) in string.ascii_uppercase}
         next_tiles -= {d[0] for d in keys | doors}
     return (keys, doors)
@@ -54,6 +54,34 @@ def maze_to_graph(maze, G=None, start=None, visited=None):
 
     return G
 
+def get_distance(attribs, edge):
+    (f,t) = edge
+    distance = attribs.get(edge, attribs.get((t,f)))
+    if distance is None:
+        print(f'distance for {edge} not found')
+    return distance
+
+
+def remove_doors_from_maze(maze):
+    G = nx.Graph()
+    distances = dict(nx.get_edge_attributes(maze, 'distance'))
+    paths = nx.all_pairs_shortest_path(maze, cutoff=3)
+    lengths = dict(nx.all_pairs_shortest_path_length(maze, cutoff=3))
+    for src in [x for x in paths if not is_door(x[0])]:
+        G.add_node(src[0])
+        for dst in [x for x in src[1] if x > src[0] and not is_door(x) and x != '@']:
+            G.add_node(dst)
+            path = src[1][dst]
+            doors = {x for x in path if is_door(x)}
+            distance = sum(get_distance(distances, x) for x in zip(path[:-1], path[1:]))
+            length = lengths[src[0]][dst]
+            G.add_edge(src[0], dst, length=length, distance=distance, path=path, doors=doors)
+       
+                        
+    
+    return G
+
+
 def show_graph(G):
     plt.subplot(1,1,1)
     edge_labels = {e:G.edges[e]['distance'] for e in G.edges}
@@ -71,7 +99,7 @@ def is_key(x):
     return x in string.ascii_lowercase
 
 def is_door(x):
-    return x not in string.ascii_lowercase
+    return x in string.ascii_uppercase
     
 def is_open(x, missing_keys):
     is_closed = is_door(x) and (x.lower() in missing_keys)
@@ -183,6 +211,28 @@ def test_example4():
     steps = collect_keys(m)
     assert steps == 136
 
+def test_remove_doors():
+    maze = nx.Graph()
+    maze.add_node('@')
+    maze.add_node('a')
+    maze.add_edge('@', 'a', distance=2)
+    maze.add_node('B')
+    maze.add_edge('@', 'B', distance=2)
+    maze.add_node('A')
+    maze.add_edge('a', 'A', distance=3)
+    maze.add_node('b')
+    maze.add_edge('A', 'b', distance=4)
+    maze.add_node('c')
+    maze.add_edge('B', 'c', distance=5)
+    clean_maze = remove_doors_from_maze(maze)
+    distances = nx.get_edge_attributes(clean_maze, 'distance')
+    doors = nx.get_edge_attributes(clean_maze, 'doors')
+    assert distances[('a', 'b')] == 7
+    assert doors[('a', 'b')] == {'A'}
+    assert distances[('@', 'c')] == 7
+    assert doors[('@', 'c')] == {'B'}
+    
+
 def play_area():
     day18_maze = parse_vault_map(day18_input)
     #day18_maze.remove_dead_ends()
@@ -201,6 +251,6 @@ if __name__ == '__main__':
     with open('day18_input.txt', 'r') as f:
         day18_input = f.read()
 
-    m = parse_vault_map(day18_input)
-    steps = collect_keys(m)
-    print(steps)
+    #m = parse_vault_map(day18_input)
+    #steps = collect_keys(m)
+    #print(steps)

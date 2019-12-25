@@ -19,6 +19,7 @@ mypy = "*"
 ptvsd = "*"
 pyrsistent = "*"
 networkx = "*"
+scipy = "*"
 
 [requires]
 python_version = "3.8"
