@@ -27,7 +27,7 @@ class IntCodeError(Exception):
 
 class IntCode:
 
-    def __init__(self, program):
+    def __init__(self, program, timeout=TIMEOUT):
         self.name = 'IntCode'
         self.program = program.copy()
         self.memory = []
@@ -36,6 +36,7 @@ class IntCode:
         self.ip = 0
         self.finished = False
         self.rp = 0
+        self.timeout = timeout
 
     def target(self, par, flags):
         if flags == OpFlags.POSITIONAL:
@@ -71,7 +72,7 @@ class IntCode:
             result = None
             while not self.finished:
                 try:
-                    result = self.input.get(True, TIMEOUT)
+                    result = self.input.get(True, self.timeout)
                     break
                 except queue.Empty:
                     pass
@@ -126,10 +127,10 @@ class IntCode:
         #print('intcode done')
 
     @classmethod
-    def create_from_source(cls, filename) -> 'IntCode':
+    def create_from_source(cls, filename, **kwargs) -> 'IntCode':
         with open(filename, 'r') as f:
             code = [int(s.strip()) for s in f.read().split(',')]
-            return IntCode(code)
+            return IntCode(code, **kwargs)
 
 
 def digits(n):
