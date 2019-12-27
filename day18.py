@@ -2,8 +2,11 @@ import pytest
 import maze
 import string
 import networkx as nx
+import networkx.algorithms.traversal.depth_first_search as dfs
 import matplotlib.pyplot as plt
 from itertools import permutations
+from collections import defaultdict
+from heapq import heapify, heappush, heappop
 
 def parse_vault_map(data):
     vault_maze = maze.Maze('#')
@@ -31,8 +34,8 @@ def find_reachable_things(maze, start, tiles_filled=None):
             for tile in next_tiles
             for loc in maze.neighbors(tile)
             if loc not in tiles_filled}
-        keys |= {(l, distance) for l in next_tiles if maze.get_tile(l) not in string.ascii_uppercase}
-        doors |= {(l, distance) for l in next_tiles if maze.get_tile(l) in string.ascii_uppercase}
+        keys |= {(l, distance) for l in next_tiles if is_key(maze.get_tile(l))}
+        doors |= {(l, distance) for l in next_tiles if is_door(maze.get_tile(l))}
         next_tiles -= {d[0] for d in keys | doors}
     return (keys, doors)
 
@@ -148,6 +151,22 @@ def collect_keys(maze):
    
     return best_key_sequence(maze, '@', keys, 0, min_distance)
 
+def shortest_pairs(G):
+    keys = {k for k in G.nodes if is_key(k)}
+    for start in keys:
+        targets = nx.shortest_path(G, source=start, weight='distance')
+        lengths = nx.shortest_path_length(G, source=start, weight='distance')
+        yield from (
+            ((start,t), lengths[t], targets[t]) 
+            for t in targets 
+            if is_key(t) and t != start)
+
+def is_not_key_after_door(path):
+    p = list(path)
+    for i in range(1, len(p)):
+        if p[i].upper() in p[:i]:
+            return False
+    return True
 #-------------------------------------------------------
 
 
@@ -231,14 +250,10 @@ def test_remove_doors():
     assert doors[('a', 'b')] == {'A'}
     assert distances[('@', 'c')] == 7
     assert doors[('@', 'c')] == {'B'}
-    
+
 
 def play_area():
     day18_maze = parse_vault_map(day18_input)
-    #day18_maze.remove_dead_ends()
-    #day18_maze.print_maze()
-
-    (keys, doors) = find_reachable_things(day18_maze, (40, 40))
 
     plt.subplot(1,1,1)
     nx.draw(day18_maze, with_labels=True)
@@ -251,6 +266,83 @@ if __name__ == '__main__':
     with open('day18_input.txt', 'r') as f:
         day18_input = f.read()
 
-    #m = parse_vault_map(day18_input)
+    m = parse_vault_map(day18_input)
     #steps = collect_keys(m)
     #print(steps)
+    show_graph(m)
+
+    shortest_pairs = list(shortest_pairs(m))
+    print(f'total {len(shortest_pairs)} pairs')
+
+    free_keys = {'z', 'b', 'u', 'y', 't','l','i','h','s','e', 'p', 'f'}
+    filtered_pairs = list(
+        #filter(lambda p: is_not_key_after_door(p[2]),
+        filter(lambda p: (p[0][0] not in free_keys) and (p[0][1] not in free_keys), 
+        shortest_pairs))    
+    for p in filtered_pairs:
+        print(p)
+    print(f'total {len(filtered_pairs)} filtered pairs')
+
+    key_map = defaultdict(defaultdict)
+    for (t, d, p) in filtered_pairs:
+        (src, dst) = t
+        keys = {x for x in p if is_key(x)}
+        needed = {x.lower() for x in p if is_door(x) and not x.lower() in keys}
+        key_map[src][dst] = (d, keys, needed)
+
+    pruned_map = defaultdict(defaultdict)
+    cutoff = 15
+    for f in  key_map:
+        dsts = sorted(list(key_map[f]), key=lambda x: len(key_map[f][x][1]))[:cutoff]
+        for dst in dsts:
+            pruned_map[f][dst] = key_map[f][dst]
+
+
+    all_keys = list(pruned_map.keys())
+    len_all_keys = len(all_keys)
+    reachable_keys = reachable_missing_keys(m, '@', all_keys)
+
+    G = nx.Graph()
+    for s in pruned_map:
+        G.add_node(s)
+        for d in pruned_map[s]:
+            G.add_node(d)
+            G.add_edge(s, d, distance=pruned_map[s][d][0])
+    show_graph(G)
+
+    stack =[(nx.shortest_path_length(m, source='@', target=k, weight='distance'), k, {k}) 
+        for k in reachable_keys]
+    heapify(stack)
+
+
+    min_distance = 1000000
+    keyset_min = defaultdict(lambda: 1000000)
+    i = 0
+
+    while stack:
+        (dist, cur_key, keys) = heappop(stack)
+        if i % 10 == 0:
+            print(f'{i:08d}: {min_distance} {len(stack)} | {dist}, {cur_key}, {keys}')
+        destinations = [d for d in pruned_map[cur_key] if d not in keys]
+        for dst in destinations:
+            (d, provided, needed) = pruned_map[cur_key][dst]
+            nxt_keys = frozenset(keys.union(provided))
+            nxt_dist = dist + d
+            missing_keys = needed - nxt_keys
+            
+            if missing_keys:
+                # cannot reach it yet
+                continue
+            if nxt_dist >= min_distance:
+                continue
+            if nxt_dist >= 16*keyset_min[nxt_keys]:
+                continue
+            else:
+                keyset_min[nxt_keys] = nxt_dist
+            if len(nxt_keys) >= len_all_keys:
+                min_distance = nxt_dist
+                print(f'min distance : {min_distance}')
+            heappush(stack, (nxt_dist, dst, nxt_keys))
+        i += 1
+
+    print('done')
